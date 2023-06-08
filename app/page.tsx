@@ -2,23 +2,37 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import debounce from 'lodash/debounce'
 import LightBox from './components/LightBox'
+import DebouncedInput from './components/DebouncedInput'
+import Spinner from './components/Spinner'
+import useLightBox from './hooks/useLightBox'
+
+interface SelectedItem {
+  imageUrl: string
+  index: number
+  hasNext: boolean
+  hasPrevious: boolean
+}
 
 export default function Home() {
-  const [queryString, setQueryString] = useState('')
-  const [data, setData] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [isOpen, setIsOpen] = useState(false)
-  const [selectedItem, setSelectedItem] = useState({
+  const [queryString, setQueryString] = useState<string>('')
+  const [data, setData] = useState<any[]>([])
+  const [loading, setLoading] = useState<boolean>(false)
+  const [isOpen, setIsOpen] = useState<boolean>(false)
+  const [selectedItem, setSelectedItem] = useState<SelectedItem>({
     imageUrl: '',
     index: 0,
     hasNext: true,
     hasPrevious: true,
   })
+  const { handlePreviousImage, handleNextImage } = useLightBox({
+    selectedItem,
+    setSelectedItem,
+    data,
+  })
 
   useEffect(() => {
-    const fetchData = debounce(async (queryString) => {
+    const fetchData = async (queryString: string) => {
       setLoading(true)
       try {
         const data = await fetch(
@@ -28,98 +42,56 @@ export default function Home() {
         setData(res.data)
         setLoading(false)
       } catch (e) {
-        return new Error("Can't fetch data")
+        console.error("Can't fetch data", e)
+        setLoading(false)
       }
-    }, 2000)
-
+    }
+    if (!queryString) return
     fetchData(queryString)
   }, [queryString])
 
   const handleChange = (string: string) => setQueryString(string)
 
-  const handleSelectImage = (image: string, index: number) => {
+  const handleOpenLightBox = (item: any, index: number) => {
     setIsOpen(true)
     setSelectedItem({
-      imageUrl: image,
+      imageUrl: item.images.downsized.url,
       index,
-      hasPrevious: true,
       hasNext: true,
-    })
-  }
-
-  const handlePreviousImage = () => {
-    if (selectedItem.index === 0) {
-      setSelectedItem({
-        imageUrl: selectedItem.imageUrl,
-        index: selectedItem.index,
-        hasPrevious: false,
-        hasNext: true,
-      })
-      return
-    }
-    setSelectedItem({
-      imageUrl: data[selectedItem.index - 1].images.downsized.url,
-      index: selectedItem.index - 1,
       hasPrevious: true,
-      hasNext: true,
-    })
-  }
-
-  const handleNextImage = () => {
-    if (selectedItem.index === data.length - 1) {
-      setSelectedItem({
-        imageUrl: selectedItem.imageUrl,
-        index: selectedItem.index,
-        hasPrevious: true,
-        hasNext: false,
-      })
-
-      return
-    }
-    setSelectedItem({
-      imageUrl: data[selectedItem.index + 1].images.downsized.url,
-      index: selectedItem.index + 1,
-      hasPrevious: true,
-      hasNext: true,
     })
   }
 
   return (
     <div className="container mx-auto space-y-4">
       <h1 className="">Blue Coding Excersise</h1>
-      <form className="">
+
+      <form>
         <div className="text-sm font-bold text-white tracking-wide">
           Search gifs
         </div>
-        <input
-          className="text-black border-2 border-blue-300  bg-white h-10 px-5 pr-16 rounded-lg text-sm focus:outline-none "
-          type="text"
-          value={queryString}
-          placeholder="q"
-          onChange={(e) => handleChange(e.target.value)}
-        />
+        <DebouncedInput onChange={handleChange} delay={1000} />
       </form>
 
-      <div className="grid grid-cols-10 gap-3">
+      <div>
         {loading ? (
-          <div className="animated animate-bounce">Loading</div>
+          <Spinner />
         ) : (
-          data?.map((item, index) => (
-            <>
-              <Image
-                key={item.name}
-                width={100}
-                height={100}
-                src={item.images.downsized.url}
-                alt="gif"
-                unoptimized
-                className="cursor-pointer transition-all hover:opacity-70"
-                onClick={() =>
-                  handleSelectImage(item.images.downsized.url, index)
-                }
-              />
-            </>
-          ))
+          <div className="grid grid-cols-10 gap-3">
+            {data?.map((item, index) => (
+              <div key={item.name}>
+                <Image
+                  width={100}
+                  height={100}
+                  src={item.images.downsized.url}
+                  alt="gif"
+                  unoptimized
+                  className="cursor-pointer transition-all hover:opacity-70 rounded-md"
+                  onClick={() => handleOpenLightBox(item, index)}
+                />
+              </div>
+            ))}
+          </div>
         )}
 
         {isOpen && (
