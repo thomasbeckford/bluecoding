@@ -26,7 +26,6 @@ export default function Home() {
     hasPrevious: true,
   })
   const { handlePreviousImage, handleNextImage } = useLightBox({
-    selectedItem,
     setSelectedItem,
     data,
   })
@@ -54,11 +53,12 @@ export default function Home() {
 
   const handleOpenLightBox = (item: any, index: number) => {
     setIsOpen(true)
+
     setSelectedItem({
       imageUrl: item.images.downsized.url,
       index,
-      hasNext: true,
-      hasPrevious: true,
+      hasNext: index < data.length - 1,
+      hasPrevious: index > 0,
     })
   }
 

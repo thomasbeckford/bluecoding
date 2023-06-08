@@ -6,48 +6,39 @@ interface LightBoxItem {
 }
 
 interface LightBoxHookProps {
-  selectedItem: LightBoxItem
   setSelectedItem: React.Dispatch<React.SetStateAction<LightBoxItem>>
   data: any
 }
 
 const useLightBox = (props: LightBoxHookProps) => {
-  const { selectedItem, setSelectedItem, data } = props
+  const { setSelectedItem, data } = props
 
   const handlePreviousImage = () => {
-    if (selectedItem.index === 0) {
-      setSelectedItem((prevSelectedItem) => ({
+    setSelectedItem((prevSelectedItem) => {
+      const newIndex = prevSelectedItem.index - 1
+
+      return {
         ...prevSelectedItem,
-        hasPrevious: false,
-        hasNext: true,
-      }))
-      return
-    }
-    setSelectedItem((prevSelectedItem) => ({
-      ...prevSelectedItem,
-      imageUrl: data[prevSelectedItem.index - 1].images.downsized.url,
-      index: prevSelectedItem.index - 1,
-      hasPrevious: true,
-      hasNext: true,
-    }))
+        imageUrl: data[newIndex].images.downsized.url,
+        index: newIndex,
+        hasNext: newIndex < data.length - 1,
+        hasPrevious: newIndex > 0,
+      }
+    })
   }
 
   const handleNextImage = () => {
-    if (selectedItem.index === data.length - 1) {
-      setSelectedItem((prevSelectedItem) => ({
+    setSelectedItem((prevSelectedItem) => {
+      const newIndex = prevSelectedItem.index + 1
+
+      return {
         ...prevSelectedItem,
-        hasNext: false,
-        hasPrevious: true,
-      }))
-      return
-    }
-    setSelectedItem((prevSelectedItem) => ({
-      ...prevSelectedItem,
-      imageUrl: data[prevSelectedItem.index + 1].images.downsized.url,
-      index: prevSelectedItem.index + 1,
-      hasNext: true,
-      hasPrevious: true,
-    }))
+        imageUrl: data[newIndex].images.downsized.url,
+        index: newIndex,
+        hasNext: newIndex < data.length - 1,
+        hasPrevious: newIndex > 0,
+      }
+    })
   }
 
   return {
